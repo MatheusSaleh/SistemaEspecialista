@@ -1,0 +1,36 @@
+package regras
+
+import com.example.sistemaespecialista.model.Sintoma
+
+rule "Verificar Bateria"
+when
+    $s : Sintoma(nome == "motor_nao_liga")
+then
+    System.out.println("Diagnóstico: verificar bateria");
+end
+
+rule "Verificar Ignição"
+when
+    $s : Sintoma(nome == "motor_gira_mas_nao_pega")
+then
+    System.out.println("Diagnóstico: problema na ignição");
+end
+
+rule "Sem combustível"
+when
+    $s1 : Sintoma(nome == "motor_gira_mas_nao_pega")
+    $s2 : Sintoma(nome == "nivel_combustivel", valor == "baixo")
+then
+    System.out.println("Diagnóstico: sem combustível");
+end
+
+rule "Revisar Suspensão"
+when
+    $s1 : Sintoma(nome == "ruido_suspensao")
+    $s2 : Sintoma(nome == "quilometragem")
+    eval(Integer.parseInt($s2.getValor()) > 100000)
+then
+    System.out.println("Diagnóstico: revisar suspensão - desgaste por quilometragem");
+end
+
+
