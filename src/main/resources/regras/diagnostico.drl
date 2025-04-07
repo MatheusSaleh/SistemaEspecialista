@@ -33,4 +33,70 @@ then
     System.out.println("Diagnóstico: revisar suspensão - desgaste por quilometragem");
 end
 
+rule "Verificar alternador"
+when
+    $s1 : Sintoma(nome == "motor_nao_liga")
+    $s2 : Sintoma(nome == "bateria_nova", valor == "sim")
+then
+    System.out.println("Diagnóstico: possível falha no alternador – bateria nova não sustenta carga");
+end
+
+rule "Trocar óleo urgentemente"
+when
+    $s1 : Sintoma(nome == "luz_oleo", valor == "acesa")
+    $s2 : Sintoma(nome == "quilometragem")
+    eval(Integer.parseInt($s2.getValor()) > 10000)
+then
+    System.out.println("Diagnóstico: troca de óleo urgente");
+end
+
+rule "Falha nos freios"
+when
+    $s1 : Sintoma(nome == "freio_mole")
+    $s2 : Sintoma(nome == "vazamento_fluido", valor == "sim")
+then
+    System.out.println("Diagnóstico: falha no sistema de freios – verificar fluido");
+end
+
+rule "Superaquecimento do motor"
+when
+    $s1 : Sintoma(nome == "temperatura_motor", valor == "alta")
+    $s2 : Sintoma(nome == "luz_alerta", valor == "acesa")
+then
+    System.out.println("Diagnóstico: superaquecimento do motor – verifique sistema de arrefecimento");
+end
+
+rule "Correia dentada com desgaste"
+when
+    $s1 : Sintoma(nome == "quilometragem")
+    eval(Integer.parseInt($s1.getValor()) > 60000)
+    $s2 : Sintoma(nome == "ruido_motor", valor == "estranho")
+then
+    System.out.println("Diagnóstico: possível desgaste da correia dentada");
+end
+
+rule "Falha complexa na injeção eletrônica considerando clima e manutenção"
+when
+    $s1 : Sintoma(nome == "consumo_excessivo_combustivel", valor == "sim")
+    $s2 : Sintoma(nome == "luz_injecao", valor == "acesa")
+    $s3 : Sintoma(nome == "quilometragem")
+    eval(Integer.parseInt($s3.getValor()) > 80000)
+    $s4 : Sintoma(nome == "resposta_acelerador", valor == "lenta")
+    $s5 : Sintoma(nome == "ultimo_checkup")
+    eval(Integer.parseInt($s5.getValor()) > 180)
+    $s6 : Sintoma(nome == "clima", valor matches "(?i)(frio|úmido|quente|seco)")
+    $s7 : Sintoma(nome == "tipo_combustivel", valor matches "(?i)(etanol|gasolina)")
+then
+    if (($s6.getValor().equalsIgnoreCase("frio") || $s6.getValor().equalsIgnoreCase("úmido")) &&
+        $s7.getValor().equalsIgnoreCase("etanol")) {
+        System.out.println("Diagnóstico: Dificuldade de combustão a frio – verificar sistema de partida e velas.");
+    } else if (($s6.getValor().equalsIgnoreCase("frio") || $s6.getValor().equalsIgnoreCase("úmido")) &&
+               $s7.getValor().equalsIgnoreCase("gasolina")) {
+        System.out.println("Diagnóstico: Ambiente frio/úmido pode afetar sensores – verificar MAP/MAF e conectores.");
+    } else if ($s6.getValor().equalsIgnoreCase("seco") || $s6.getValor().equalsIgnoreCase("quente")) {
+        System.out.println("Diagnóstico: Falha avançada na injeção – verificar bicos, sonda lambda e ECU.");
+    } else {
+        System.out.println("Diagnóstico: Sintomas indicam falha sistêmica na injeção – revisão completa recomendada.");
+    }
+end
 
