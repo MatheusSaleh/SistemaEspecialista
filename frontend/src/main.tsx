@@ -20,6 +20,7 @@ function App() {
   const [erro, setErro] = useState('')
   const formRef = useRef<HTMLFormElement>(null)
   const resultadoRef = useRef<HTMLHeadingElement>(null)
+  const explicacaoRef = useRef<HTMLDialogElement>(null)
 
   async function simular(entrada: Respostas, anteriores: Hipotese[] | null) {
     setPendente(true)
@@ -87,7 +88,9 @@ function App() {
         <div className="container topo-inner">
           <a href="#" className="marca"><span className="marca-icone"><Activity size={22} /></span>Auto<span>Lab</span></a>
           <nav aria-label="Navegação principal">
-            <a className="link-tecnico" href="#sobre"><Code2 size={17} /> Como funciona</a>
+            <button className="link-tecnico" type="button" aria-haspopup="dialog" onClick={() => explicacaoRef.current?.showModal()}>
+              <Code2 size={17} /> Como funciona
+            </button>
             <a className="link-github" href={repositorio}><Github size={17} /> GitHub</a>
           </nav>
         </div>
@@ -217,12 +220,25 @@ function App() {
         </div>
       </main>
 
-      <footer id="sobre">
+      <footer>
         <div className="container rodape">
-          <div><h2>Como funciona</h2><p>O formulário envia os sintomas à API. O Drools avalia os fatos e devolve as regras acionadas com suas evidências.</p></div>
+          <div><h2>Sobre o AutoLab</h2><p>Projeto de portfólio sobre sistemas especialistas e motores de regras.</p></div>
           <div className="tecnologias" aria-label="Tecnologias"><span>React + TypeScript</span><span>Spring Boot</span><span>Drools</span></div>
         </div>
       </footer>
+
+      <dialog ref={explicacaoRef} className="explicacao" aria-labelledby="titulo-explicacao">
+        <h2 id="titulo-explicacao">Como funciona</h2>
+        <ol>
+          <li><strong>Você informa os sintomas.</strong> O formulário em React envia as respostas à API em Spring Boot.</li>
+          <li><strong>O Drools avalia as regras.</strong> Cada regra gera uma hipótese quando as condições dela são atendidas.</li>
+          <li><strong>Você confere a explicação.</strong> Em “Por que apareceu?”, veja o nome da regra e as respostas que a acionaram.</li>
+        </ol>
+        <p>No caso inicial, mudar o nível de combustível de <strong>Baixo</strong> para <strong>Normal</strong> remove a hipótese de combustível e mantém a de ignição.</p>
+        <form method="dialog">
+          <button className="botao primario" type="submit">Fechar</button>
+        </form>
+      </dialog>
     </>
   )
 }
