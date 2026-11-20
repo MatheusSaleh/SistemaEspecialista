@@ -1,0 +1,32 @@
+name: autolab
+services:
+  autolab:
+    build: .
+    image: autolab:local
+    restart: unless-stopped
+    stop_grace_period: 20s
+    network_mode: none
+    user: "10001:${AUTOLAB_PROXY_GID:?Informe o GID do proxy reverso da VPS}"
+    environment:
+      AUTOLAB_SOCKET_PATH: /run/autolab/autolab.sock
+    volumes:
+      - type: bind
+        source: /var/lib/autolab/run
+        target: /run/autolab
+        bind:
+          create_host_path: false
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,nodev,size=64m,mode=1777
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    mem_limit: 512m
+    cpus: 0.5
+    pids_limit: 128
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: "3"

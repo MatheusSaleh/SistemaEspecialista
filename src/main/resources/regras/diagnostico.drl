@@ -1,81 +1,170 @@
 package regras
 
+import com.example.sistemaespecialista.model.Hipotese
 import com.example.sistemaespecialista.model.Sintoma
 
+// @quando alimenta o catálogo e as perguntas de acompanhamento.
+
 rule "Verificar Bateria"
+    @id("bateria")
+    @categoria("partida")
+    @titulo("Possível problema na bateria")
+    @quando("motor_nao_liga=sim")
 when
-    $s : Sintoma(nome == "motor_nao_liga")
+    $s1 : Sintoma(nome == "motor_nao_liga", valor == "sim")
 then
-    System.out.println("Diagnóstico: verificar bateria");
+    String titulo = "Possível problema na bateria";
+    insert(Hipotese.de("bateria", titulo, drools.getRule().getName(), $s1));
 end
 
 rule "Verificar Ignição"
+    @id("ignicao")
+    @categoria("partida")
+    @titulo("Possível problema na ignição")
+    @quando("motor_gira_mas_nao_pega=sim")
 when
-    $s : Sintoma(nome == "motor_gira_mas_nao_pega")
+    $s1 : Sintoma(nome == "motor_gira_mas_nao_pega", valor == "sim")
 then
-    System.out.println("Diagnóstico: problema na ignição");
-end
-
-rule "Sem combustível"
-when
-    $s1 : Sintoma(nome == "motor_gira_mas_nao_pega")
-    $s2 : Sintoma(nome == "nivel_combustivel", valor == "baixo")
-then
-    System.out.println("Diagnóstico: sem combustível");
-end
-
-rule "Revisar Suspensão"
-when
-    $s1 : Sintoma(nome == "ruido_suspensao")
-    $s2 : Sintoma(nome == "quilometragem")
-    eval(Integer.parseInt($s2.getValor()) > 100000)
-then
-    System.out.println("Diagnóstico: revisar suspensão - desgaste por quilometragem");
+    String titulo = "Possível problema na ignição";
+    insert(Hipotese.de("ignicao", titulo, drools.getRule().getName(), $s1));
 end
 
 rule "Verificar alternador"
+    @id("alternador")
+    @categoria("partida")
+    @titulo("Possível problema no alternador")
+    @quando("motor_nao_liga=sim;bateria_nova=sim")
 when
-    $s1 : Sintoma(nome == "motor_nao_liga")
+    $s1 : Sintoma(nome == "motor_nao_liga", valor == "sim")
     $s2 : Sintoma(nome == "bateria_nova", valor == "sim")
 then
-    System.out.println("Diagnóstico: possível falha no alternador – bateria nova não sustenta carga");
+    String titulo = "Possível problema no alternador";
+    insert(Hipotese.de("alternador", titulo, drools.getRule().getName(), $s1, $s2));
 end
 
-rule "Trocar óleo urgentemente"
+rule "Contato nos terminais da bateria"
+    @id("terminais")
+    @categoria("partida")
+    @titulo("Possível mau contato nos terminais da bateria")
+    @quando("motor_nao_liga=sim;terminais_oxidados=sim")
 when
-    $s1 : Sintoma(nome == "luz_oleo", valor == "acesa")
-    $s2 : Sintoma(nome == "quilometragem")
-    eval(Integer.parseInt($s2.getValor()) > 10000)
+    $s1 : Sintoma(nome == "motor_nao_liga", valor == "sim")
+    $s2 : Sintoma(nome == "terminais_oxidados", valor == "sim")
 then
-    System.out.println("Diagnóstico: troca de óleo urgente");
+    String titulo = "Possível mau contato nos terminais da bateria";
+    insert(Hipotese.de("terminais", titulo, drools.getRule().getName(), $s1, $s2));
 end
 
-rule "Falha nos freios"
+rule "Circuito de partida com clique"
+    @id("motor_partida")
+    @categoria("partida")
+    @titulo("Possível problema no circuito de partida")
+    @quando("motor_nao_liga=sim;clique_partida=sim;luzes_enfraquecem=nao")
 when
-    $s1 : Sintoma(nome == "freio_mole")
-    $s2 : Sintoma(nome == "vazamento_fluido", valor == "sim")
+    $s1 : Sintoma(nome == "motor_nao_liga", valor == "sim")
+    $s2 : Sintoma(nome == "clique_partida", valor == "sim")
+    $s3 : Sintoma(nome == "luzes_enfraquecem", valor == "nao")
 then
-    System.out.println("Diagnóstico: falha no sistema de freios – verificar fluido");
+    String titulo = "Possível problema no circuito de partida";
+    insert(Hipotese.de("motor_partida", titulo, drools.getRule().getName(), $s1, $s2, $s3));
+end
+
+rule "Queda de tensão na partida"
+    @id("queda_tensao")
+    @categoria("partida")
+    @titulo("Possível queda de tensão no circuito elétrico")
+    @quando("motor_nao_liga=sim;luzes_enfraquecem=sim")
+when
+    $s1 : Sintoma(nome == "motor_nao_liga", valor == "sim")
+    $s2 : Sintoma(nome == "luzes_enfraquecem", valor == "sim")
+then
+    String titulo = "Possível queda de tensão no circuito elétrico";
+    insert(Hipotese.de("queda_tensao", titulo, drools.getRule().getName(), $s1, $s2));
 end
 
 rule "Superaquecimento do motor"
+    @id("temperatura")
+    @categoria("arrefecimento")
+    @titulo("Possível superaquecimento do motor")
+    @quando("temperatura_motor=alta;luz_alerta=acesa")
 when
     $s1 : Sintoma(nome == "temperatura_motor", valor == "alta")
     $s2 : Sintoma(nome == "luz_alerta", valor == "acesa")
 then
-    System.out.println("Diagnóstico: superaquecimento do motor – verifique sistema de arrefecimento");
+    String titulo = "Possível superaquecimento do motor";
+    insert(Hipotese.de("temperatura", titulo, drools.getRule().getName(), $s1, $s2));
 end
 
-rule "Correia dentada com desgaste"
+rule "Líquido de arrefecimento abaixo do nível"
+    @id("nivel_arrefecimento")
+    @categoria("arrefecimento")
+    @titulo("Possível falta de líquido de arrefecimento")
+    @quando("temperatura_motor=alta;nivel_arrefecimento=baixo")
 when
-    $s1 : Sintoma(nome == "quilometragem")
-    eval(Integer.parseInt($s1.getValor()) > 60000)
-    $s2 : Sintoma(nome == "ruido_motor", valor == "estranho")
+    $s1 : Sintoma(nome == "temperatura_motor", valor == "alta")
+    $s2 : Sintoma(nome == "nivel_arrefecimento", valor == "baixo")
 then
-    System.out.println("Diagnóstico: possível desgaste da correia dentada");
+    String titulo = "Possível falta de líquido de arrefecimento";
+    insert(Hipotese.de("nivel_arrefecimento", titulo, drools.getRule().getName(), $s1, $s2));
+end
+
+rule "Temperatura alta sem ventoinha"
+    @id("ventoinha")
+    @categoria("arrefecimento")
+    @titulo("Possível falha no acionamento da ventoinha")
+    @quando("temperatura_motor=alta;ventoinha_liga=nao")
+when
+    $s1 : Sintoma(nome == "temperatura_motor", valor == "alta")
+    $s2 : Sintoma(nome == "ventoinha_liga", valor == "nao")
+then
+    String titulo = "Possível falha no acionamento da ventoinha";
+    insert(Hipotese.de("ventoinha", titulo, drools.getRule().getName(), $s1, $s2));
+end
+
+rule "Perda de líquido de arrefecimento"
+    @id("vazamento_arrefecimento")
+    @categoria("arrefecimento")
+    @titulo("Possível vazamento no sistema de arrefecimento")
+    @quando("nivel_arrefecimento=baixo;vazamento_arrefecimento=sim")
+when
+    $s1 : Sintoma(nome == "nivel_arrefecimento", valor == "baixo")
+    $s2 : Sintoma(nome == "vazamento_arrefecimento", valor == "sim")
+then
+    String titulo = "Possível vazamento no sistema de arrefecimento";
+    insert(Hipotese.de("vazamento_arrefecimento", titulo, drools.getRule().getName(), $s1, $s2));
+end
+
+rule "Oscilação com nível normal"
+    @id("termostato")
+    @categoria("arrefecimento")
+    @titulo("Possível irregularidade no controle da temperatura")
+    @quando("temperatura_oscilando=sim;nivel_arrefecimento=normal")
+when
+    $s1 : Sintoma(nome == "temperatura_oscilando", valor == "sim")
+    $s2 : Sintoma(nome == "nivel_arrefecimento", valor == "normal")
+then
+    String titulo = "Possível irregularidade no controle da temperatura";
+    insert(Hipotese.de("termostato", titulo, drools.getRule().getName(), $s1, $s2));
+end
+
+rule "Sem combustível"
+    @id("combustivel")
+    @categoria("injecao")
+    @titulo("Nível baixo de combustível")
+    @quando("motor_gira_mas_nao_pega=sim;nivel_combustivel=baixo")
+when
+    $s1 : Sintoma(nome == "motor_gira_mas_nao_pega", valor == "sim")
+    $s2 : Sintoma(nome == "nivel_combustivel", valor == "baixo")
+then
+    String titulo = "Nível baixo de combustível";
+    insert(Hipotese.de("combustivel", titulo, drools.getRule().getName(), $s1, $s2));
 end
 
 rule "Falha complexa na injeção eletrônica considerando clima e manutenção"
+    @id("injecao")
+    @categoria("injecao")
+    @titulo("Possível falha na injeção eletrônica")
+    @quando("consumo_excessivo_combustivel=sim;luz_injecao=acesa;quilometragem>80000;resposta_acelerador=lenta;ultimo_checkup>180;clima=frio/umido/quente/seco;tipo_combustivel=etanol/gasolina")
 when
     $s1 : Sintoma(nome == "consumo_excessivo_combustivel", valor == "sim")
     $s2 : Sintoma(nome == "luz_injecao", valor == "acesa")
@@ -84,19 +173,211 @@ when
     $s4 : Sintoma(nome == "resposta_acelerador", valor == "lenta")
     $s5 : Sintoma(nome == "ultimo_checkup")
     eval(Integer.parseInt($s5.getValor()) > 180)
-    $s6 : Sintoma(nome == "clima", valor matches "(?i)(frio|úmido|quente|seco)")
-    $s7 : Sintoma(nome == "tipo_combustivel", valor matches "(?i)(etanol|gasolina)")
+    $s6 : Sintoma(nome == "clima", valor in ("frio", "umido", "quente", "seco"))
+    $s7 : Sintoma(nome == "tipo_combustivel", valor in ("etanol", "gasolina"))
 then
-    if (($s6.getValor().equalsIgnoreCase("frio") || $s6.getValor().equalsIgnoreCase("úmido")) &&
-        $s7.getValor().equalsIgnoreCase("etanol")) {
-        System.out.println("Diagnóstico: Dificuldade de combustão a frio – verificar sistema de partida e velas.");
-    } else if (($s6.getValor().equalsIgnoreCase("frio") || $s6.getValor().equalsIgnoreCase("úmido")) &&
-               $s7.getValor().equalsIgnoreCase("gasolina")) {
-        System.out.println("Diagnóstico: Ambiente frio/úmido pode afetar sensores – verificar MAP/MAF e conectores.");
-    } else if ($s6.getValor().equalsIgnoreCase("seco") || $s6.getValor().equalsIgnoreCase("quente")) {
-        System.out.println("Diagnóstico: Falha avançada na injeção – verificar bicos, sonda lambda e ECU.");
-    } else {
-        System.out.println("Diagnóstico: Sintomas indicam falha sistêmica na injeção – revisão completa recomendada.");
+    String titulo = "Possível falha na injeção eletrônica";
+    if ($s6.getValor().equals("frio") || $s6.getValor().equals("umido")) {
+        titulo = $s7.getValor().equals("etanol")
+                ? "Possível dificuldade de combustão a frio"
+                : "Possível alteração nos sensores em ambiente frio ou úmido";
     }
+    insert(Hipotese.de("injecao", titulo, drools.getRule().getName(), $s1, $s2, $s3, $s4, $s5, $s6, $s7));
 end
 
+rule "Perda de potência com combustível no tanque"
+    @id("alimentacao")
+    @categoria("injecao")
+    @titulo("Possível irregularidade na alimentação de combustível")
+    @quando("perde_potencia_carga=sim;nivel_combustivel=medio/cheio;resposta_acelerador=lenta")
+when
+    $s1 : Sintoma(nome == "perde_potencia_carga", valor == "sim")
+    $s2 : Sintoma(nome == "nivel_combustivel", valor in ("medio", "cheio"))
+    $s3 : Sintoma(nome == "resposta_acelerador", valor == "lenta")
+then
+    String titulo = "Possível irregularidade na alimentação de combustível";
+    insert(Hipotese.de("alimentacao", titulo, drools.getRule().getName(), $s1, $s2, $s3));
+end
+
+rule "Oscilação em marcha lenta"
+    @id("marcha_lenta")
+    @categoria("injecao")
+    @titulo("Possível irregularidade na admissão ou na injeção")
+    @quando("marcha_lenta_irregular=sim;luz_injecao=acesa")
+when
+    $s1 : Sintoma(nome == "marcha_lenta_irregular", valor == "sim")
+    $s2 : Sintoma(nome == "luz_injecao", valor == "acesa")
+then
+    String titulo = "Possível irregularidade na admissão ou na injeção";
+    insert(Hipotese.de("marcha_lenta", titulo, drools.getRule().getName(), $s1, $s2));
+end
+
+rule "Falha de combustão com alerta intermitente"
+    @id("combustao")
+    @categoria("injecao")
+    @titulo("Possível falha de combustão")
+    @quando("marcha_lenta_irregular=sim;luz_injecao_piscando=sim")
+when
+    $s1 : Sintoma(nome == "marcha_lenta_irregular", valor == "sim")
+    $s2 : Sintoma(nome == "luz_injecao_piscando", valor == "sim")
+then
+    String titulo = "Possível falha de combustão";
+    insert(Hipotese.de("combustao", titulo, drools.getRule().getName(), $s1, $s2));
+end
+
+rule "Falha nos freios"
+    @id("freios")
+    @categoria("freios")
+    @titulo("Possível problema no sistema de freios")
+    @quando("freio_mole=sim;vazamento_fluido=sim")
+when
+    $s1 : Sintoma(nome == "freio_mole", valor == "sim")
+    $s2 : Sintoma(nome == "vazamento_fluido", valor == "sim")
+then
+    String titulo = "Possível problema no sistema de freios";
+    insert(Hipotese.de("freios", titulo, drools.getRule().getName(), $s1, $s2));
+end
+
+rule "Perda de pressão no pedal"
+    @id("pressao_freio")
+    @categoria("freios")
+    @titulo("Possível perda de pressão no circuito de freio")
+    @quando("freio_mole=sim;pedal_baixa=sim;vazamento_fluido=nao")
+when
+    $s1 : Sintoma(nome == "freio_mole", valor == "sim")
+    $s2 : Sintoma(nome == "pedal_baixa", valor == "sim")
+    $s3 : Sintoma(nome == "vazamento_fluido", valor == "nao")
+then
+    String titulo = "Possível perda de pressão no circuito de freio";
+    insert(Hipotese.de("pressao_freio", titulo, drools.getRule().getName(), $s1, $s2, $s3));
+end
+
+rule "Ruído metálico ao frear"
+    @id("pastilhas")
+    @categoria("freios")
+    @titulo("Possível desgaste nos componentes de atrito")
+    @quando("ruido_frenagem=sim")
+when
+    $s1 : Sintoma(nome == "ruido_frenagem", valor == "sim")
+then
+    String titulo = "Possível desgaste nos componentes de atrito";
+    insert(Hipotese.de("pastilhas", titulo, drools.getRule().getName(), $s1));
+end
+
+rule "Vibração durante a frenagem"
+    @id("vibracao_freio")
+    @categoria("freios")
+    @titulo("Possível irregularidade nos componentes de frenagem")
+    @quando("vibracao_frenagem=sim")
+when
+    $s1 : Sintoma(nome == "vibracao_frenagem", valor == "sim")
+then
+    String titulo = "Possível irregularidade nos componentes de frenagem";
+    insert(Hipotese.de("vibracao_freio", titulo, drools.getRule().getName(), $s1));
+end
+
+rule "Revisar Suspensão"
+    @id("suspensao")
+    @categoria("suspensao")
+    @titulo("Possível desgaste na suspensão")
+    @quando("ruido_suspensao=sim;quilometragem>100000")
+when
+    $s1 : Sintoma(nome == "ruido_suspensao", valor == "sim")
+    $s2 : Sintoma(nome == "quilometragem")
+    eval(Integer.parseInt($s2.getValor()) > 100000)
+then
+    String titulo = "Possível desgaste na suspensão";
+    insert(Hipotese.de("suspensao", titulo, drools.getRule().getName(), $s1, $s2));
+end
+
+rule "Trajetória desviada e desgaste irregular"
+    @id("alinhamento")
+    @categoria("suspensao")
+    @titulo("Possível desalinhamento das rodas")
+    @quando("veiculo_puxa=sim;pneu_desgaste_irregular=sim")
+when
+    $s1 : Sintoma(nome == "veiculo_puxa", valor == "sim")
+    $s2 : Sintoma(nome == "pneu_desgaste_irregular", valor == "sim")
+then
+    String titulo = "Possível desalinhamento das rodas";
+    insert(Hipotese.de("alinhamento", titulo, drools.getRule().getName(), $s1, $s2));
+end
+
+rule "Oscilação da carroceria e ruído na suspensão"
+    @id("amortecedores")
+    @categoria("suspensao")
+    @titulo("Possível perda de eficiência dos amortecedores")
+    @quando("veiculo_balanca=sim;ruido_suspensao=sim")
+when
+    $s1 : Sintoma(nome == "veiculo_balanca", valor == "sim")
+    $s2 : Sintoma(nome == "ruido_suspensao", valor == "sim")
+then
+    String titulo = "Possível perda de eficiência dos amortecedores";
+    insert(Hipotese.de("amortecedores", titulo, drools.getRule().getName(), $s1, $s2));
+end
+
+rule "Esforço e ruído ao virar"
+    @id("direcao")
+    @categoria("suspensao")
+    @titulo("Possível irregularidade no sistema de direção")
+    @quando("direcao_pesada=sim;ruido_direcao=sim")
+when
+    $s1 : Sintoma(nome == "direcao_pesada", valor == "sim")
+    $s2 : Sintoma(nome == "ruido_direcao", valor == "sim")
+then
+    String titulo = "Possível irregularidade no sistema de direção";
+    insert(Hipotese.de("direcao", titulo, drools.getRule().getName(), $s1, $s2));
+end
+
+rule "Trocar óleo urgentemente"
+    @id("oleo")
+    @categoria("manutencao")
+    @titulo("Alerta relacionado ao óleo")
+    @quando("luz_oleo=acesa;quilometragem>10000")
+when
+    $s1 : Sintoma(nome == "luz_oleo", valor == "acesa")
+    $s2 : Sintoma(nome == "quilometragem")
+    eval(Integer.parseInt($s2.getValor()) > 10000)
+then
+    String titulo = "Alerta relacionado ao óleo";
+    insert(Hipotese.de("oleo", titulo, drools.getRule().getName(), $s1, $s2));
+end
+
+rule "Correia dentada com desgaste"
+    @id("correia")
+    @categoria("manutencao")
+    @titulo("Possível desgaste da correia dentada")
+    @quando("quilometragem>60000;ruido_motor=estranho")
+when
+    $s1 : Sintoma(nome == "quilometragem")
+    eval(Integer.parseInt($s1.getValor()) > 60000)
+    $s2 : Sintoma(nome == "ruido_motor", valor == "estranho")
+then
+    String titulo = "Possível desgaste da correia dentada";
+    insert(Hipotese.de("correia", titulo, drools.getRule().getName(), $s1, $s2));
+end
+
+rule "Intervalo do cenário de revisão excedido"
+    @id("revisao")
+    @categoria("manutencao")
+    @titulo("Intervalo de revisão do cenário excedido")
+    @quando("ultimo_checkup>365")
+when
+    $s1 : Sintoma(nome == "ultimo_checkup")
+    eval(Integer.parseInt($s1.getValor()) > 365)
+then
+    String titulo = "Intervalo de revisão do cenário excedido";
+    insert(Hipotese.de("revisao", titulo, drools.getRule().getName(), $s1));
+end
+
+rule "Indicador de desgaste dos pneus atingido"
+    @id("pneus")
+    @categoria("manutencao")
+    @titulo("Indicador de desgaste dos pneus atingido")
+    @quando("indicador_pneu=sim")
+when
+    $s1 : Sintoma(nome == "indicador_pneu", valor == "sim")
+then
+    String titulo = "Indicador de desgaste dos pneus atingido";
+    insert(Hipotese.de("pneus", titulo, drools.getRule().getName(), $s1));
+end
