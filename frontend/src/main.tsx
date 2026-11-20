@@ -3,6 +3,8 @@ import { createRoot } from 'react-dom/client'
 import { Activity, BookOpen, ChevronDown, CircleCheck, CircleHelp, Code2, FlaskConical, Github, RotateCcw, ScanLine, SlidersHorizontal, Zap } from 'lucide-react'
 import { camposRapidos, cenarios, entradaDaApi, iconesHipoteses, rotuloValor, type Catalogo, type Hipotese, type Regra, type Respostas, type Simulacao } from './cenarios'
 import { Acompanhamento, CampoSintoma, CatalogoDialog, Comparacao } from './componentes'
+import '@fontsource-variable/dm-sans/wght.css'
+import '@fontsource-variable/space-grotesk/wght.css'
 import './style.css'
 
 const repositorio = 'https://github.com/MatheusSaleh/SistemaEspecialista'

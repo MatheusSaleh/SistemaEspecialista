@@ -9,7 +9,7 @@ import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
@@ -25,11 +25,14 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.containsString;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
+import static org.springframework.http.MediaType.TEXT_PLAIN;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest
@@ -39,6 +42,37 @@ class SistemaEspecialistaApplicationTests {
     private MockMvc mvc;
     @Autowired
     private DiagnosticoService service;
+
+    @Test
+    void enviaCabecalhosDeSegurancaEImpedeCacheDaApi() throws Exception {
+        mvc.perform(get("/api/regras"))
+                .andExpect(status().isOk())
+                .andExpect(header().string("Content-Security-Policy", containsString("frame-ancestors 'none'")))
+                .andExpect(header().string("X-Content-Type-Options", "nosniff"))
+                .andExpect(header().string("X-Frame-Options", "DENY"))
+                .andExpect(header().string("Referrer-Policy", "no-referrer"))
+                .andExpect(header().string("Cache-Control", "no-store"));
+    }
+
+    @Test
+    void rejeitaCorpoGrandeEFormatoDeEntradaNaoPermitido() throws Exception {
+        mvc.perform(post("/api/diagnosticos").contentType(APPLICATION_JSON)
+                        .content(" ".repeat(16 * 1024 + 1)))
+                .andExpect(status().is(413));
+        mvc.perform(post("/api/diagnosticos").contentType(TEXT_PLAIN).content("{}"))
+                .andExpect(status().isUnsupportedMediaType());
+    }
+
+    @Test
+    void rejeitaCamposDesconhecidosEJsonComDadosExtras() throws Exception {
+        simular("""
+                [{"nome":"motor_nao_liga","valor":"sim","extra":"valor nao aceito"}]
+                """)
+                .andExpect(status().isBadRequest());
+        mvc.perform(post("/api/diagnosticos").contentType(APPLICATION_JSON)
+                        .content("{\"sintomas\":[]} {}"))
+                .andExpect(status().isBadRequest());
+    }
 
     @Test
     void publicaAs28RegrasNasSeisAreas() throws Exception {

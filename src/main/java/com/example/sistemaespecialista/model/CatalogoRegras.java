@@ -60,6 +60,9 @@ public record CatalogoRegras(List<Categoria> categorias, List<Campo> campos, Lis
 
         private static String metadado(Rule regra, String chave) {
             if (regra.getMetaData().get(chave) instanceof String texto && !texto.isBlank()) {
+                if (texto.length() >= 2 && texto.startsWith("\"") && texto.endsWith("\"")) {
+                    return texto.substring(1, texto.length() - 1);
+                }
                 return texto;
             }
             throw new IllegalStateException("Metadado " + chave + " ausente na regra " + regra.getName());

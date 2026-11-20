@@ -5,12 +5,13 @@ import com.example.sistemaespecialista.model.CatalogoRegras.Condicao;
 import com.example.sistemaespecialista.model.Hipotese;
 import com.example.sistemaespecialista.model.Sintoma;
 import com.example.sistemaespecialista.model.SintomasAceitos;
+import org.drools.model.codegen.ExecutableModelProject;
 import org.kie.api.KieBase;
 import org.kie.api.KieServices;
 import org.kie.api.definition.KiePackage;
 import org.kie.api.io.ResourceType;
 import org.kie.api.runtime.KieSession;
-import org.kie.internal.builder.KnowledgeBuilderFactory;
+import org.kie.internal.utils.KieHelper;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -30,12 +31,10 @@ public class DiagnosticoService {
     public DiagnosticoService() {
         var recurso = KieServices.Factory.get().getResources()
                 .newClassPathResource("regras/diagnostico.drl", UTF_8.name(), DiagnosticoService.class.getClassLoader());
-        var compilador = KnowledgeBuilderFactory.newKnowledgeBuilder();
-        compilador.add(recurso, ResourceType.DRL);
-        if (compilador.hasErrors()) {
-            throw new IllegalStateException("Falha ao carregar as regras Drools: " + compilador.getErrors());
-        }
-        regras = compilador.newKieBase();
+        regras = new KieHelper()
+                .setClassLoader(DiagnosticoService.class.getClassLoader())
+                .addResource(recurso, ResourceType.DRL)
+                .build(ExecutableModelProject.class);
         catalogo = CatalogoRegras.de(regras.getKiePackages().stream()
                 .map(KiePackage::getRules)
                 .flatMap(java.util.Collection::stream)

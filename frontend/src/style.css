@@ -1,11 +1,9 @@
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap');
-
 :root {
-  font-family: "DM Sans", system-ui, sans-serif;
+  font-family: "DM Sans Variable", system-ui, sans-serif;
   color: #142033;
   background: #f3f5f8;
   font-synthesis: none;
-  --inclinado: "Space Grotesk", system-ui, sans-serif;
+  --inclinado: "Space Grotesk Variable", system-ui, sans-serif;
   --navy: #111827;
   --muted: #485970;
   --border: #dbe2ed;

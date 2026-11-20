@@ -2,7 +2,7 @@
 
 Simulador educacional de diagnóstico automotivo com **28 regras Drools em seis áreas**. Altere os sintomas, veja quais evidências sustentam cada hipótese e compare duas simulações.
 
-**[Testar a demo local](#rodar-localmente)** · [Publicar com Render](#publicar)
+**[Testar a demo local](#rodar-localmente)** · [Publicar na sua VPS](docs/deploy-vps.md)
 
 ![Demonstração do AutoLab: um caso de partida sugere uma pergunta, compara os resultados e exibe as condições no catálogo.](docs/demo.gif)
 
@@ -34,15 +34,13 @@ Com Docker:
 
 ```sh
 docker build -t autolab .
-docker run --rm -p 8080:8080 autolab
+docker run --rm -p 127.0.0.1:8080:8080 autolab
 ```
 
 Abra [localhost:8080](http://localhost:8080/). React e a API são servidos pela mesma aplicação.
 
-Para desenvolver com Java 17 e Node.js 22, execute `./mvnw spring-boot:run` na raiz e, em outro terminal, execute `npm ci` e `npm run dev` dentro de `frontend/`. Abra [localhost:5173](http://localhost:5173/). No PowerShell, use `.\mvnw.cmd spring-boot:run`. Para usar o modo terminal, execute o WAR com `--cli`.
+Para desenvolver com Java 17 e Node.js 22, execute `./mvnw spring-boot:run` na raiz e, em outro terminal, execute `npm ci` e `npm run dev` dentro de `frontend/`. Abra [localhost:5173](http://localhost:5173/). No PowerShell, use `.\mvnw.cmd spring-boot:run`. Para usar o modo terminal, execute `java -jar target/SistemaEspecialista-0.0.1-SNAPSHOT.jar --cli`.
 
 ## Publicar
 
-O [Dockerfile](Dockerfile) empacota a interface e a API em uma única imagem. O [Blueprint do Render](render.yaml) configura o serviço web. A publicação requer acesso a uma conta do Render. Os visitantes podem usar a aplicação sem cadastro.
-
-[![Publicar no Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/MatheusSaleh/SistemaEspecialista/tree/portfolio/autolab)
+Na VPS Linux, use o [guia de implantação](docs/deploy-vps.md) e o [Compose de produção](compose.yaml). O contêiner recebe tráfego do proxy HTTPS por um socket Unix dedicado.
