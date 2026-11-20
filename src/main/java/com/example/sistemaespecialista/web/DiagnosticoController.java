@@ -1,10 +1,12 @@
 package com.example.sistemaespecialista.web;
 
-import com.example.sistemaespecialista.model.Hipotese;
+import com.example.sistemaespecialista.model.CatalogoRegras;
 import com.example.sistemaespecialista.model.Sintoma;
 import com.example.sistemaespecialista.service.DiagnosticoService;
+import com.example.sistemaespecialista.service.DiagnosticoService.Simulacao;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
@@ -20,9 +22,14 @@ public class DiagnosticoController {
         this.service = service;
     }
 
+    @GetMapping("/api/regras")
+    public CatalogoRegras listarRegras() {
+        return service.catalogo();
+    }
+
     @PostMapping("/api/diagnosticos")
-    public Resultado diagnosticar(@RequestBody Solicitacao solicitacao) {
-        return new Resultado(service.diagnosticar(solicitacao.sintomas()));
+    public Simulacao diagnosticar(@RequestBody Solicitacao solicitacao) {
+        return service.simular(solicitacao.sintomas());
     }
 
     @ExceptionHandler(IllegalArgumentException.class)
@@ -32,6 +39,5 @@ public class DiagnosticoController {
     }
 
     public record Solicitacao(List<Sintoma> sintomas) {}
-    public record Resultado(List<Hipotese> hipoteses) {}
     public record Erro(String mensagem) {}
 }

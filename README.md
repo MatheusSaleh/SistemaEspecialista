@@ -1,16 +1,18 @@
 # AutoLab
 
-Simulador educacional de diagnóstico automotivo. Altere os sintomas de um cenário e veja quais regras do Drools geram cada hipótese.
+Simulador educacional de diagnóstico automotivo com **28 regras Drools em seis áreas**. Altere os sintomas, veja quais evidências sustentam cada hipótese e compare duas simulações.
 
 **[Testar a demo local](#rodar-localmente)** · [Publicar com Render](#publicar)
 
-![Demonstração do AutoLab: combustível baixo aciona duas hipóteses. Com nível normal, apenas a hipótese de ignição permanece.](docs/demo.gif)
+![Demonstração do AutoLab: um caso de partida sugere uma pergunta, compara os resultados e exibe as condições no catálogo.](docs/demo.gif)
 
 ## Experimente em menos de um minuto
 
-1. Abra **Experimentar caso pronto**. O motor gira, mas não pega, e o nível de combustível está baixo.
-2. Expanda **Por que apareceu?** para conferir a regra e as evidências.
-3. Mude o nível de combustível para **Normal** e clique em **Simular diagnóstico**. A hipótese de combustível sai do resultado e a de ignição permanece.
+1. Abra **Clique ao dar partida**. O simulador pergunta se as luzes ficam fracas durante a tentativa.
+2. Selecione **Não** e clique em **Aplicar e simular**. O painel **Antes e depois** mostra a nova hipótese de problema no circuito de partida.
+3. Abra **Catálogo · 28 regras** para filtrar por área, examinar as condições e testar qualquer regra com dados de exemplo.
+
+O cenário **Motor não pega** permite comparar dois níveis de combustível. **Prazo da revisão** mostra o limite didático de 365 dias e o resultado com 366 dias.
 
 ## Do terminal à web
 
@@ -19,9 +21,12 @@ React + TypeScript → POST /api/diagnosticos → Spring Boot → Drools
                       ← hipóteses, regras e evidências ←
 ```
 
-O projeto começou como um aplicativo de terminal. Agora, as [regras Drools](src/main/resources/regras/diagnostico.drl) geram objetos estruturados com as evidências que receberam. O [serviço Java](src/main/java/com/example/sistemaespecialista/service/DiagnosticoService.java) executa as regras em uma sessão por chamada. A interface exibe a explicação e destaca hipóteses removidas após uma mudança nos sintomas.
+O projeto começou como um aplicativo de terminal. Agora, as [regras Drools](src/main/resources/regras/diagnostico.drl) retornam hipóteses com as evidências que as acionaram. O [serviço Java](src/main/java/com/example/sistemaespecialista/service/DiagnosticoService.java) usa uma sessão Drools por chamada. Os metadados das regras alimentam o catálogo e permitem sugerir perguntas quando falta uma única evidência para avaliar uma regra compatível com as respostas.
 
-Os [testes de integração](src/test/java/com/example/sistemaespecialista/SistemaEspecialistaApplicationTests.java) cobrem a comparação do caso principal, respostas negativas e desconhecidas, limites de quilometragem e as evidências da regra de injeção.
+- `GET /api/regras` serve o catálogo, as condições, os exemplos e os campos do formulário.
+- `POST /api/diagnosticos` executa a simulação e retorna as hipóteses e as perguntas de acompanhamento.
+
+Os [testes de integração](src/test/java/com/example/sistemaespecialista/SistemaEspecialistaApplicationTests.java) exercitam cada uma das 28 regras com exemplos positivos, evidências ausentes e respostas que impedem seu disparo. Também cobrem hipóteses simultâneas, limites numéricos e as duas respostas do caso de acompanhamento.
 
 ## Rodar localmente
 

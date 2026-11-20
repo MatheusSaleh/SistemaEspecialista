@@ -1,58 +1,52 @@
-import { Activity, CircleGauge, Fuel, ScanLine } from 'lucide-react'
+import { Activity, BatteryCharging, CalendarClock, CircleGauge, Fuel, ScanLine, ThermometerSun } from 'lucide-react'
 
 export type Respostas = Record<string, string>
-type Opcao = [valor: string, rotulo: string]
-type Campo = { nome: string; rotulo: string; opcoes?: Opcao[]; unidade?: string }
-
-const booleanos: Opcao[] = [['sim', 'Sim'], ['nao', 'Não']]
-const painel: Opcao[] = [['acesa', 'Acesa'], ['apagada', 'Apagada']]
-
-export const ignicao: Campo = {
-  nome: 'motor_gira_mas_nao_pega',
-  rotulo: 'O motor gira, mas não pega?',
-  opcoes: booleanos,
+export type Categoria = { id: string; nome: string }
+export type Campo = {
+  nome: string
+  rotulo: string
+  categoria: string
+  unidade: string | null
+  opcoes: { valor: string; rotulo: string }[]
 }
+export type Regra = {
+  id: string
+  nome: string
+  titulo: string
+  categoria: string
+  condicoes: { campo: string; valores: string[]; maiorQue: number | null }[]
+  exemplo: Respostas
+}
+export type Catalogo = { categorias: Categoria[]; campos: Campo[]; regras: Regra[] }
+export type Hipotese = { id: string; titulo: string; regra: string; evidencias: { sintoma: string; valor: string }[] }
+export type Pergunta = { campo: string; regrasPossiveis: string[] }
+export type Simulacao = { hipoteses: Hipotese[]; perguntas: Pergunta[] }
 
-export const camposPartida: Campo[] = [
-  ignicao,
-  { nome: 'nivel_combustivel', rotulo: 'Nível de combustível', opcoes: [['baixo', 'Baixo'], ['medio', 'Normal'], ['cheio', 'Cheio']] },
-]
+export const camposRapidos = ['motor_gira_mas_nao_pega', 'nivel_combustivel']
 
-export const camposExtras: Campo[] = [
-  { nome: 'motor_nao_liga', rotulo: 'O motor fica sem girar na partida?', opcoes: booleanos },
-  { nome: 'bateria_nova', rotulo: 'A bateria é nova?', opcoes: booleanos },
-  { nome: 'ruido_suspensao', rotulo: 'Há ruído na suspensão?', opcoes: booleanos },
-  { nome: 'quilometragem', rotulo: 'Quilometragem', unidade: 'km' },
-  { nome: 'luz_oleo', rotulo: 'Luz do óleo', opcoes: painel },
-  { nome: 'freio_mole', rotulo: 'O pedal de freio está mole?', opcoes: booleanos },
-  { nome: 'vazamento_fluido', rotulo: 'Há vazamento de fluido de freio?', opcoes: booleanos },
-  { nome: 'temperatura_motor', rotulo: 'Temperatura do motor', opcoes: [['normal', 'Normal'], ['alta', 'Alta']] },
-  { nome: 'luz_alerta', rotulo: 'Luz de alerta de temperatura', opcoes: painel },
-  { nome: 'ruido_motor', rotulo: 'Ruído do motor', opcoes: [['normal', 'Normal'], ['estranho', 'Estranho']] },
-  { nome: 'consumo_excessivo_combustivel', rotulo: 'O consumo de combustível aumentou?', opcoes: booleanos },
-  { nome: 'luz_injecao', rotulo: 'Luz da injeção', opcoes: painel },
-  { nome: 'resposta_acelerador', rotulo: 'Resposta do acelerador', opcoes: [['normal', 'Normal'], ['lenta', 'Lenta']] },
-  { nome: 'ultimo_checkup', rotulo: 'Tempo desde a última revisão', unidade: 'dias' },
-  { nome: 'clima', rotulo: 'Clima', opcoes: [['frio', 'Frio'], ['quente', 'Quente'], ['umido', 'Úmido'], ['seco', 'Seco']] },
-  { nome: 'tipo_combustivel', rotulo: 'Tipo de combustível', opcoes: [['etanol', 'Etanol'], ['gasolina', 'Gasolina']] },
-]
-
-export const cenarios: { id: string; titulo: string; detalhe: string; icone: typeof Fuel; respostas: Respostas }[] = [
-  { id: 'partida', titulo: 'Motor não pega', detalhe: 'Partida e combustível', icone: Fuel, respostas: { motor_gira_mas_nao_pega: 'sim', nivel_combustivel: 'baixo' } },
-  { id: 'suspensao', titulo: 'Ruído na suspensão', detalhe: 'Quilometragem elevada', icone: CircleGauge, respostas: { ruido_suspensao: 'sim', quilometragem: '120000' } },
+export const cenarios: { id: string; titulo: string; detalhe: string; icone: typeof Fuel; respostas: Respostas; categoria?: string }[] = [
+  { id: 'partida', titulo: 'Motor não pega', detalhe: 'Compare dois níveis de combustível', icone: Fuel, respostas: { motor_gira_mas_nao_pega: 'sim', nivel_combustivel: 'baixo' } },
+  { id: 'suspensao', titulo: 'Ruído na suspensão', detalhe: 'Quilometragem elevada', icone: CircleGauge, categoria: 'suspensao', respostas: { ruido_suspensao: 'sim', quilometragem: '120000' } },
   { id: 'sem-alertas', titulo: 'Sem alertas', detalhe: 'Nenhuma regra acionada', icone: ScanLine, respostas: { motor_gira_mas_nao_pega: 'nao', nivel_combustivel: 'medio' } },
+  { id: 'eletrica', titulo: 'Clique ao dar partida', detalhe: 'Responda se as luzes enfraquecem', icone: BatteryCharging, categoria: 'partida', respostas: { motor_nao_liga: 'sim', clique_partida: 'sim', bateria_nova: 'nao', terminais_oxidados: 'nao' } },
+  { id: 'temperatura', titulo: 'Temperatura alta', detalhe: 'Combine a temperatura e a luz de alerta', icone: ThermometerSun, categoria: 'arrefecimento', respostas: { temperatura_motor: 'alta' } },
+  { id: 'revisao', titulo: 'Prazo da revisão', detalhe: 'Compare 365 e 366 dias', icone: CalendarClock, categoria: 'manutencao', respostas: { ultimo_checkup: '365' } },
 ]
 
 export const iconesHipoteses: Record<string, typeof Activity> = {
   combustivel: Fuel,
   suspensao: CircleGauge,
+  temperatura: ThermometerSun,
+  revisao: CalendarClock,
 }
 
-const campos = [...camposPartida, ...camposExtras]
-export function descreverEvidencia(nome: string, valor: string) {
-  const campo = campos.find((item) => item.nome === nome)
-  const rotulo = campo?.rotulo ?? nome
-  const resposta = campo?.opcoes?.find(([opcao]) => opcao === valor)?.[1]
-  const numero = campo?.unidade ? `${Number(valor).toLocaleString('pt-BR')} ${campo.unidade}` : valor
-  return { rotulo, resposta: resposta ?? numero }
+export function rotuloValor(campo: Campo, valor: string) {
+  if (campo.unidade) return `${Number(valor).toLocaleString('pt-BR')} ${campo.unidade}`
+  return campo.opcoes.find((opcao) => opcao.valor === valor)?.rotulo ?? valor
+}
+
+export function entradaDaApi(respostas: Respostas) {
+  return { sintomas: Object.entries(respostas)
+    .filter(([, valor]) => valor !== '')
+    .map(([nome, valor]) => ({ nome, valor })) }
 }

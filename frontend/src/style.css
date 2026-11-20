@@ -86,7 +86,12 @@ h1 em { color: var(--amber); font-style: normal; }
 
 .bancada { padding-block: 26px 28px; }
 h2 { font: 700 1.35rem/1.2 var(--inclinado); letter-spacing: -.033em; }
-.casos h2 { margin-bottom: 12px; }
+.casos-cabecalho { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px 14px; margin-bottom: 12px; }
+.botao-catalogo, .teste-regra { background: #edf2fb; color: #294772; border-color: #cbd8eb; font-size: .9rem; }
+.botao-catalogo:not(:disabled):hover, .teste-regra:hover { background: #e0eafa; }
+.botao-catalogo:disabled, .caso:disabled { opacity: .62; }
+.casos > .status { margin-bottom: 12px; }
+.casos .erro { align-items: center; justify-content: space-between; flex-wrap: wrap; }
 .casos-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
 .caso { min-height: 74px; display: flex; text-align: left; align-items: center; gap: 12px; padding: 12px 14px; border: 1px solid var(--border); border-radius: 10px; background: #fff; color: #182438; }
 .caso:not(:disabled):hover, .caso[aria-pressed=true] { border-color: #b37827; background: #fffbf3; }
@@ -110,6 +115,9 @@ summary::-webkit-details-marker { display: none; }
 details[open] > summary > svg { transform: rotate(180deg); }
 .extras { border-block: 1px solid #e4eaf2; }
 .extras summary { min-height: 42px; font-weight: 700; color: #364e70; font-size: .9rem; }
+.extras-areas { padding: 0 0 8px 9px; }
+.area-sintomas { border-top: 1px solid #e4eaf2; padding-left: 4px; }
+.area-sintomas summary { min-height: 38px; }
 .extras-grid { display: grid; grid-template-columns: 1fr 1fr; align-items: end; gap: 11px; padding-block: 3px 12px; }
 .acoes-form { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; }
 .texto { background: transparent; color: #364e70; }
@@ -144,6 +152,31 @@ footer { background: #e9eef6; border-top: 1px solid #d9e2ee; }
 .explicacao ol { display: grid; gap: 10px; padding-left: 22px; }
 .explicacao li, .explicacao p { color: var(--muted); line-height: 1.5; }
 .explicacao form { display: flex; justify-content: flex-end; margin-top: 16px; }
+.catalogo { width: min(720px, calc(100% - 32px)); }
+.catalogo-cabecalho { display: flex; align-items: start; justify-content: space-between; gap: 12px; }
+.catalogo-cabecalho form { margin: 0; }
+.catalogo-filtro { margin-top: 15px; }
+.lista-regras { display: grid; gap: 7px; margin-top: 13px; }
+.regra-catalogo { padding: 10px; border: 1px solid var(--border); border-radius: 8px; }
+.regra-catalogo summary span { display: grid; gap: 2px; }
+.regra-catalogo summary svg { flex: none; }
+.regra-catalogo small { color: var(--muted); font-size: .84rem; }
+.regra-catalogo p, .teste-regra { margin-top: 8px; }
+.regra-catalogo dd { flex: 0 1 auto; text-align: right; }
+.acompanhamento, .comparacao { padding: 12px; border: 1px solid var(--border); border-radius: 8px; }
+.acompanhamento { background: #f2f6fd; }
+.acompanhamento h3, .comparacao h3 { display: flex; align-items: center; gap: 7px; font-size: 1rem; }
+.acompanhamento p, .comparacao p { margin-top: 4px; color: var(--muted); font-size: .9rem; }
+.pergunta { display: grid; gap: 3px; margin-top: 10px; }
+.pergunta small { color: var(--muted); font-size: .82rem; }
+.acompanhamento .botao { margin-top: 13px; }
+.comparacao-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-top: 8px; }
+.comparacao-grid > div { border-radius: 6px; background: #f1f5fb; padding: 8px; }
+.comparacao h4 { margin: 0; font-size: .89rem; }
+.comparacao ul { display: grid; gap: 7px; margin: 7px 0 0; padding: 0; list-style: none; }
+.comparacao li { display: flex; flex-wrap: wrap; align-items: baseline; gap: 3px 5px; font-size: .85rem; }
+.situacao { background: #e0f0eb; color: #245b4f; padding: 1px 5px; border-radius: 4px; font-size: .76rem; font-weight: 700; }
+.situacao.removida { background: #fbeae4; color: #853e2b; }
 
 @media (max-width: 930px) {
   .selo-visual { right: 0; bottom: 9px; }
@@ -176,6 +209,8 @@ footer { background: #e9eef6; border-top: 1px solid #d9e2ee; }
   .sobretitulo { font-size: .7rem; }
   .sobretitulo svg { flex: none; }
   .extras-grid { grid-template-columns: 1fr; }
+  .regra-catalogo .evidencias div { display: grid; gap: 2px; }
+  .regra-catalogo dd { text-align: left; }
   .acoes-hero { gap: 8px; }
   .acoes-hero .botao, .acoes-hero .secundario { width: 100%; }
 }

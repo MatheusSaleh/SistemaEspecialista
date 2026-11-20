@@ -1,36 +1,55 @@
-import { StrictMode, useRef, useState } from 'react'
+import { StrictMode, useEffect, useRef, useState } from 'react'
 import { createRoot } from 'react-dom/client'
-import { Activity, ChevronDown, CircleCheck, CircleHelp, Code2, FlaskConical, Github, RotateCcw, ScanLine, SlidersHorizontal, Zap } from 'lucide-react'
-import { camposExtras, camposPartida, cenarios, descreverEvidencia, iconesHipoteses, type Respostas } from './cenarios'
+import { Activity, BookOpen, ChevronDown, CircleCheck, CircleHelp, Code2, FlaskConical, Github, RotateCcw, ScanLine, SlidersHorizontal, Zap } from 'lucide-react'
+import { camposRapidos, cenarios, entradaDaApi, iconesHipoteses, rotuloValor, type Catalogo, type Hipotese, type Regra, type Respostas, type Simulacao } from './cenarios'
+import { Acompanhamento, CampoSintoma, CatalogoDialog, Comparacao } from './componentes'
 import './style.css'
 
 const repositorio = 'https://github.com/MatheusSaleh/SistemaEspecialista'
 const endpoint = '/api/diagnosticos'
 
-type Hipotese = { id: string; titulo: string; regra: string; evidencias: { sintoma: string; valor: string }[] }
-type Relatorio = { hipoteses: Hipotese[]; anteriores: Hipotese[] | null }
+type Relatorio = Simulacao & { anteriores: Hipotese[] | null }
 
 function App() {
   const [respostas, setRespostas] = useState<Respostas>({})
   const [cenario, setCenario] = useState('')
   const [extras, setExtras] = useState(false)
+  const [categoriaAtiva, setCategoriaAtiva] = useState('')
   const [relatorio, setRelatorio] = useState<Relatorio | null>(null)
   const [pendente, setPendente] = useState(false)
   const [desatualizado, setDesatualizado] = useState(false)
   const [erro, setErro] = useState('')
+  const [catalogo, setCatalogo] = useState<Catalogo | null>(null)
+  const [erroCatalogo, setErroCatalogo] = useState(false)
+  const [tentativa, setTentativa] = useState(0)
   const formRef = useRef<HTMLFormElement>(null)
   const resultadoRef = useRef<HTMLHeadingElement>(null)
   const explicacaoRef = useRef<HTMLDialogElement>(null)
+  const catalogoRef = useRef<HTMLDialogElement>(null)
+  const camposPorNome = new Map(catalogo?.campos.map((campo) => [campo.nome, campo]))
+
+  useEffect(() => {
+    const cancelar = new AbortController()
+    fetch('/api/regras', { signal: AbortSignal.any([cancelar.signal, AbortSignal.timeout(12000)]) })
+      .then((resposta) => {
+        if (!resposta.ok) throw new Error('Catálogo indisponível')
+        return resposta.json() as Promise<Catalogo>
+      })
+      .then(setCatalogo)
+      .catch(() => {
+        if (!cancelar.signal.aborted) setErroCatalogo(true)
+      })
+    return () => cancelar.abort()
+  }, [tentativa])
 
   async function simular(entrada: Respostas, anteriores: Hipotese[] | null) {
     setPendente(true)
     setErro('')
     try {
-      const sintomas = Object.entries(entrada).filter(([, valor]) => valor !== '').map(([nome, valor]) => ({ nome, valor }))
       const resposta = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sintomas }),
+        body: JSON.stringify(entradaDaApi(entrada)),
         signal: AbortSignal.timeout(10000),
       })
       if (resposta.status === 400) {
@@ -39,8 +58,8 @@ function App() {
       }
       if (!resposta.ok) throw new Error('O simulador está indisponível. Tente novamente em instantes.')
 
-      const dados: { hipoteses: Hipotese[] } = await resposta.json()
-      setRelatorio({ hipoteses: dados.hipoteses, anteriores })
+      const dados: Simulacao = await resposta.json()
+      setRelatorio({ ...dados, anteriores })
       setDesatualizado(false)
     } catch (falha) {
       setErro(falha instanceof TypeError || (falha instanceof DOMException && falha.name === 'TimeoutError')
@@ -56,17 +75,30 @@ function App() {
     const caso = cenarios.find((item) => item.id === id)
     if (!caso) return
     setCenario(id)
-    setRespostas(caso.respostas)
-    setExtras(id === 'suspensao')
+    iniciarCaso(caso.respostas, caso.categoria)
+  }
+
+  function iniciarCaso(entrada: Respostas, categoria?: string) {
+    setRespostas(entrada)
+    setExtras(Boolean(categoria))
+    setCategoriaAtiva(categoria ?? '')
     setRelatorio(null)
     setDesatualizado(false)
-    void simular(caso.respostas, null)
+    void simular(entrada, null)
+  }
+
+  function testarRegra(regra: Regra) {
+    catalogoRef.current?.close()
+    setCenario('')
+    iniciarCaso(regra.exemplo, regra.categoria)
+    formRef.current?.scrollIntoView({ block: 'start' })
   }
 
   function limpar() {
     setRespostas({})
     setCenario('')
     setExtras(false)
+    setCategoriaAtiva('')
     setErro('')
     setRelatorio(null)
     setDesatualizado(false)
@@ -77,6 +109,14 @@ function App() {
     setCenario('')
     setErro('')
     setDesatualizado(Boolean(relatorio))
+  }
+
+  function aplicarAcompanhamento(novasRespostas: Respostas) {
+    const entrada = { ...respostas, ...novasRespostas }
+    setRespostas(entrada)
+    setCenario('')
+    setDesatualizado(true)
+    void simular(entrada, relatorio?.hipoteses ?? null)
   }
 
   const removidas = relatorio?.anteriores?.filter((anterior) => !relatorio.hipoteses.some((atual) => atual.id === anterior.id)) ?? []
@@ -104,7 +144,7 @@ function App() {
               <h1>Do sintoma à <em>hipótese.</em></h1>
               <p>Explore um caso automotivo, altere uma resposta e descubra quais regras explicam o resultado.</p>
               <div className="acoes-hero">
-                <button className="botao primario" type="button" disabled={pendente} onClick={() => {
+                <button className="botao primario" type="button" disabled={pendente || !catalogo} onClick={() => {
                   carregar('partida')
                   if (window.matchMedia('(min-width: 761px)').matches) formRef.current?.scrollIntoView({ block: 'nearest' })
                 }}><Zap size={17} /> Experimentar caso pronto</button>
@@ -125,10 +165,26 @@ function App() {
 
         <div className="container bancada">
           <section className="casos" aria-labelledby="titulo-casos">
-            <h2 id="titulo-casos">Cenários de exemplo</h2>
+            <div className="casos-cabecalho">
+              <h2 id="titulo-casos">Cenários de exemplo</h2>
+              <button className="botao botao-catalogo" type="button" aria-haspopup="dialog" disabled={!catalogo || pendente}
+                onClick={() => catalogoRef.current?.showModal()}>
+                <BookOpen size={17} /> {catalogo ? `Catálogo · ${catalogo.regras.length} regras` : 'Catálogo de regras'}
+              </button>
+            </div>
+            {!catalogo && <div className="status" role="status">
+              {erroCatalogo ? (
+                <div className="aviso erro">Não foi possível carregar o simulador.
+                  <button className="botao texto" type="button" onClick={() => {
+                    setErroCatalogo(false)
+                    setTentativa((atual) => atual + 1)
+                  }}>Tentar novamente</button>
+                </div>
+              ) : 'Carregando o catálogo de regras…'}
+            </div>}
             <div className="casos-grid">
               {cenarios.map(({ id, titulo, detalhe, icone: Icone }) => (
-                <button type="button" key={id} className="caso" aria-pressed={cenario === id} disabled={pendente} onClick={() => carregar(id)}>
+                <button type="button" key={id} className="caso" aria-pressed={cenario === id} disabled={pendente || !catalogo} onClick={() => carregar(id)}>
                   <span className="caso-icone"><Icone size={20} /></span>
                   <span className="caso-texto"><strong>{titulo}</strong><small>{detalhe}</small></span>
                 </button>
@@ -145,29 +201,27 @@ function App() {
                 <span className="painel-icone"><SlidersHorizontal size={20} /></span>
                 <div><h2>Sintomas do veículo</h2><p>Selecione o que você observou.</p></div>
               </header>
-              <fieldset className="campos" disabled={pendente}>
-                {camposPartida.map((campo) => (
-                  <label className="campo" key={campo.nome}>
-                    {campo.rotulo}
-                    <select value={respostas[campo.nome] ?? ''} onChange={(evento) => alterar(campo.nome, evento.target.value)}>
-                      <option value="">Não informado</option>
-                      {campo.opcoes?.map(([valor, rotulo]) => <option key={valor} value={valor}>{rotulo}</option>)}
-                    </select>
-                  </label>
-                ))}
+              <fieldset className="campos" disabled={pendente || !catalogo}>
+                {camposRapidos.map((nome) => {
+                  const campo = camposPorNome.get(nome)
+                  return campo && <CampoSintoma key={nome} campo={campo} valor={respostas[nome] ?? ''}
+                    alterar={(valor) => alterar(nome, valor)} />
+                })}
                 <details className="extras" open={extras} onToggle={(evento) => setExtras(evento.currentTarget.open)}>
                   <summary>Mais sintomas e condições <ChevronDown size={17} /></summary>
-                  <div className="extras-grid">
-                    {camposExtras.map(({ nome, rotulo, opcoes, unidade }) => (
-                      <label className="campo" key={nome}>
-                        {rotulo}{unidade ? ` (${unidade})` : ''}
-                        {opcoes ? (
-                          <select value={respostas[nome] ?? ''} onChange={(evento) => alterar(nome, evento.target.value)}>
-                            <option value="">Não informado</option>
-                            {opcoes.map(([valor, opcao]) => <option key={valor} value={valor}>{opcao}</option>)}
-                          </select>
-                        ) : <input type="number" min="0" max="2147483647" step="1" placeholder="Não informado" value={respostas[nome] ?? ''} onChange={(evento) => alterar(nome, evento.target.value)} />}
-                      </label>
+                  <div className="extras-areas">
+                    {catalogo?.categorias.map((area) => (
+                      <details className="area-sintomas" key={area.id} open={categoriaAtiva === area.id} onToggle={(evento) => {
+                        const aberta = evento.currentTarget.open
+                        setCategoriaAtiva((atual) => aberta ? area.id : atual === area.id ? '' : atual)
+                      }}>
+                        <summary>{area.nome}<ChevronDown size={16} /></summary>
+                        <div className="extras-grid">
+                          {catalogo.campos.filter((campo) => campo.categoria === area.id && !camposRapidos.includes(campo.nome))
+                            .map((campo) => <CampoSintoma key={campo.nome} campo={campo} valor={respostas[campo.nome] ?? ''}
+                              alterar={(valor) => alterar(campo.nome, valor)} />)}
+                        </div>
+                      </details>
                     ))}
                   </div>
                 </details>
@@ -202,14 +256,16 @@ function App() {
                           <p className="regra"><Code2 size={16} /><span>Regra: <strong>{hipotese.regra}</strong></span></p>
                           <dl className="evidencias">
                             {hipotese.evidencias.map(({ sintoma, valor }) => {
-                              const { rotulo, resposta } = descreverEvidencia(sintoma, valor)
-                              return <div key={sintoma}><dt>{rotulo}</dt><dd>{resposta}</dd></div>
+                              const campo = camposPorNome.get(sintoma)
+                              return <div key={sintoma}><dt>{campo?.rotulo ?? sintoma}</dt><dd>{campo ? rotuloValor(campo, valor) : valor}</dd></div>
                             })}
                           </dl>
                         </details>
                       </article>
                     )
                   })}
+                  {relatorio.anteriores && <Comparacao antes={relatorio.anteriores} depois={relatorio.hipoteses} />}
+                  {relatorio.perguntas.length > 0 && <Acompanhamento perguntas={relatorio.perguntas} campos={camposPorNome} aplicar={aplicarAcompanhamento} />}
                 </div>
               ) : !relatorio && !pendente && !erro && (
                 <div className="estado"><ScanLine size={30} /><strong>Aguardando uma simulação</strong><p>Escolha um cenário de exemplo ou preencha os sintomas.</p></div>
@@ -227,6 +283,7 @@ function App() {
         </div>
       </footer>
 
+      <CatalogoDialog dialogo={catalogoRef} catalogo={catalogo} campos={camposPorNome} testar={testarRegra} />
       <dialog ref={explicacaoRef} className="explicacao" aria-labelledby="titulo-explicacao">
         <h2 id="titulo-explicacao">Como funciona</h2>
         <ol>
