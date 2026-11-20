@@ -2,7 +2,7 @@
 
 Simulador educacional de diagnóstico automotivo com **28 regras Drools em seis áreas**. Altere os sintomas, veja quais evidências sustentam cada hipótese e compare duas simulações.
 
-**[Testar a demo local](#rodar-localmente)** · [Publicar na sua VPS](docs/deploy-vps.md)
+**[Testar a demo local](#rodar-localmente)** · [Publicar na sua VPS](docs/deploy-vps.md) · [Auditoria de segurança](docs/security-audit/relatorio-auditoria-seguranca.pdf)
 
 ![Demonstração do AutoLab: um caso de partida sugere uma pergunta, compara os resultados e exibe as condições no catálogo.](docs/demo.gif)
 
@@ -13,6 +13,20 @@ Simulador educacional de diagnóstico automotivo com **28 regras Drools em seis 
 3. Abra **Catálogo · 28 regras** para filtrar por área, examinar as condições e testar qualquer regra com dados de exemplo.
 
 O cenário **Motor não pega** permite comparar dois níveis de combustível. **Prazo da revisão** mostra o limite didático de 365 dias e o resultado com 366 dias.
+
+## Telas
+
+### Início e cenários prontos
+
+![Tela inicial do AutoLab com radar e seis cenários de exemplo](docs/screenshots/inicio.png)
+
+### Comparação de hipóteses
+
+![Simulação de partida com uma hipótese mantida e uma nova após responder à pergunta de acompanhamento](docs/screenshots/comparacao.png)
+
+| Catálogo de regras | Tela inicial no celular |
+| --- | --- |
+| <img src="docs/screenshots/catalogo.png" alt="Catálogo filtrado por freios com as evidências de uma regra" width="510"> | <img src="docs/screenshots/celular.png" alt="Tela inicial responsiva do AutoLab" width="250"> |
 
 ## Do terminal à web
 
