@@ -1,0 +1,6 @@
+services:
+  - type: web
+    name: autolab-sistema-especialista
+    runtime: docker
+    plan: free
+    healthCheckPath: /

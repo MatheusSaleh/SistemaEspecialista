@@ -1,44 +1,45 @@
 package regras
 
+import com.example.sistemaespecialista.model.Hipotese
 import com.example.sistemaespecialista.model.Sintoma
 
 rule "Verificar Bateria"
 when
-    $s : Sintoma(nome == "motor_nao_liga")
+    $s1 : Sintoma(nome == "motor_nao_liga", valor == "sim")
 then
-    System.out.println("Diagnóstico: verificar bateria");
+    insert(Hipotese.de("bateria", "Possível problema na bateria", drools.getRule().getName(), $s1));
 end
 
 rule "Verificar Ignição"
 when
-    $s : Sintoma(nome == "motor_gira_mas_nao_pega")
+    $s1 : Sintoma(nome == "motor_gira_mas_nao_pega", valor == "sim")
 then
-    System.out.println("Diagnóstico: problema na ignição");
+    insert(Hipotese.de("ignicao", "Possível problema na ignição", drools.getRule().getName(), $s1));
 end
 
 rule "Sem combustível"
 when
-    $s1 : Sintoma(nome == "motor_gira_mas_nao_pega")
+    $s1 : Sintoma(nome == "motor_gira_mas_nao_pega", valor == "sim")
     $s2 : Sintoma(nome == "nivel_combustivel", valor == "baixo")
 then
-    System.out.println("Diagnóstico: sem combustível");
+    insert(Hipotese.de("combustivel", "Nível baixo de combustível", drools.getRule().getName(), $s1, $s2));
 end
 
 rule "Revisar Suspensão"
 when
-    $s1 : Sintoma(nome == "ruido_suspensao")
+    $s1 : Sintoma(nome == "ruido_suspensao", valor == "sim")
     $s2 : Sintoma(nome == "quilometragem")
     eval(Integer.parseInt($s2.getValor()) > 100000)
 then
-    System.out.println("Diagnóstico: revisar suspensão - desgaste por quilometragem");
+    insert(Hipotese.de("suspensao", "Possível desgaste na suspensão", drools.getRule().getName(), $s1, $s2));
 end
 
 rule "Verificar alternador"
 when
-    $s1 : Sintoma(nome == "motor_nao_liga")
+    $s1 : Sintoma(nome == "motor_nao_liga", valor == "sim")
     $s2 : Sintoma(nome == "bateria_nova", valor == "sim")
 then
-    System.out.println("Diagnóstico: possível falha no alternador – bateria nova não sustenta carga");
+    insert(Hipotese.de("alternador", "Possível problema no alternador", drools.getRule().getName(), $s1, $s2));
 end
 
 rule "Trocar óleo urgentemente"
@@ -47,15 +48,15 @@ when
     $s2 : Sintoma(nome == "quilometragem")
     eval(Integer.parseInt($s2.getValor()) > 10000)
 then
-    System.out.println("Diagnóstico: troca de óleo urgente");
+    insert(Hipotese.de("oleo", "Alerta relacionado ao óleo", drools.getRule().getName(), $s1, $s2));
 end
 
 rule "Falha nos freios"
 when
-    $s1 : Sintoma(nome == "freio_mole")
+    $s1 : Sintoma(nome == "freio_mole", valor == "sim")
     $s2 : Sintoma(nome == "vazamento_fluido", valor == "sim")
 then
-    System.out.println("Diagnóstico: falha no sistema de freios – verificar fluido");
+    insert(Hipotese.de("freios", "Possível problema no sistema de freios", drools.getRule().getName(), $s1, $s2));
 end
 
 rule "Superaquecimento do motor"
@@ -63,7 +64,7 @@ when
     $s1 : Sintoma(nome == "temperatura_motor", valor == "alta")
     $s2 : Sintoma(nome == "luz_alerta", valor == "acesa")
 then
-    System.out.println("Diagnóstico: superaquecimento do motor – verifique sistema de arrefecimento");
+    insert(Hipotese.de("temperatura", "Possível superaquecimento do motor", drools.getRule().getName(), $s1, $s2));
 end
 
 rule "Correia dentada com desgaste"
@@ -72,31 +73,31 @@ when
     eval(Integer.parseInt($s1.getValor()) > 60000)
     $s2 : Sintoma(nome == "ruido_motor", valor == "estranho")
 then
-    System.out.println("Diagnóstico: possível desgaste da correia dentada");
+    insert(Hipotese.de("correia", "Possível desgaste da correia dentada", drools.getRule().getName(), $s1, $s2));
 end
 
 rule "Falha complexa na injeção eletrônica considerando clima e manutenção"
 when
-    $s1 : Sintoma(nome == "consumo_excessivo_combustivel", valor == "sim")
-    $s2 : Sintoma(nome == "luz_injecao", valor == "acesa")
-    $s3 : Sintoma(nome == "quilometragem")
-    eval(Integer.parseInt($s3.getValor()) > 80000)
-    $s4 : Sintoma(nome == "resposta_acelerador", valor == "lenta")
-    $s5 : Sintoma(nome == "ultimo_checkup")
-    eval(Integer.parseInt($s5.getValor()) > 180)
-    $s6 : Sintoma(nome == "clima", valor matches "(?i)(frio|úmido|quente|seco)")
-    $s7 : Sintoma(nome == "tipo_combustivel", valor matches "(?i)(etanol|gasolina)")
+    $consumo : Sintoma(nome == "consumo_excessivo_combustivel", valor == "sim")
+    $injecao : Sintoma(nome == "luz_injecao", valor == "acesa")
+    $km : Sintoma(nome == "quilometragem")
+    eval(Integer.parseInt($km.getValor()) > 80000)
+    $acelerador : Sintoma(nome == "resposta_acelerador", valor == "lenta")
+    $checkup : Sintoma(nome == "ultimo_checkup")
+    eval(Integer.parseInt($checkup.getValor()) > 180)
+    $clima : Sintoma(nome == "clima", valor in ("frio", "umido", "quente", "seco"))
+    $combustivel : Sintoma(nome == "tipo_combustivel", valor in ("etanol", "gasolina"))
 then
-    if (($s6.getValor().equalsIgnoreCase("frio") || $s6.getValor().equalsIgnoreCase("úmido")) &&
-        $s7.getValor().equalsIgnoreCase("etanol")) {
-        System.out.println("Diagnóstico: Dificuldade de combustão a frio – verificar sistema de partida e velas.");
-    } else if (($s6.getValor().equalsIgnoreCase("frio") || $s6.getValor().equalsIgnoreCase("úmido")) &&
-               $s7.getValor().equalsIgnoreCase("gasolina")) {
-        System.out.println("Diagnóstico: Ambiente frio/úmido pode afetar sensores – verificar MAP/MAF e conectores.");
-    } else if ($s6.getValor().equalsIgnoreCase("seco") || $s6.getValor().equalsIgnoreCase("quente")) {
-        System.out.println("Diagnóstico: Falha avançada na injeção – verificar bicos, sonda lambda e ECU.");
+    String titulo;
+    if ($clima.getValor().equals("frio") || $clima.getValor().equals("umido")) {
+        if ($combustivel.getValor().equals("etanol")) {
+            titulo = "Possível dificuldade de combustão a frio";
+        } else {
+            titulo = "Possível alteração nos sensores em ambiente frio ou úmido";
+        }
     } else {
-        System.out.println("Diagnóstico: Sintomas indicam falha sistêmica na injeção – revisão completa recomendada.");
+        titulo = "Possível falha na injeção eletrônica";
     }
+    insert(Hipotese.de("injecao", titulo, drools.getRule().getName(),
+            $consumo, $injecao, $km, $acelerador, $checkup, $clima, $combustivel));
 end
-
